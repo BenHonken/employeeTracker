@@ -4,7 +4,7 @@ USE employees;
 CREATE TABLE department
 (
   id int AUTO_INCREMENT,
-  name varchar (30) NOT NULL,
+  department varchar (30) NOT NULL,
   PRIMARY KEY (id)
 );
 CREATE TABLE role
@@ -28,10 +28,11 @@ CREATE TABLE manager
 (
   id int AUTO_INCREMENT,
   employee_id int NOT NULL,
+  name int NOT NULL
   PRIMARY KEY (id)
 );
 
-INSERT INTO department (name) VALUES ('Sales'), ('Engineering'), ('Finance'), ('Legal');
+INSERT INTO department (department) VALUES ('Sales'), ('Engineering'), ('Finance'), ('Legal');
 INSERT INTO role (title, salary, department_id) VALUES 
 ('Sales Lead', 100000, 1),
 ('Sales Person', 80000, 1),
@@ -48,7 +49,7 @@ INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES
 ('Jayne', 'Cobb', 5, 1),
 ('Derrial', 'Book', 6, 1),
 ('River', 'Tam', 7, 3);
-INSERT INTO manager (employee_id) VALUES
-(1),
-(3),
-(6);
+INSERT INTO manager (employee_id, name) VALUES
+(1, 'Malcolm Reynolds'),
+(3, 'Kaylee Frye'),
+(6, 'Derrial Book');

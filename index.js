@@ -1,6 +1,10 @@
 const cTable = require("console.table");
 const mysql = require("mysql");
 const inquirer = require("inquirer");
+let employeeArray = [];
+let roleArray = [];
+let departmentArray = [];
+let managerArray = [];
 const connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
@@ -39,22 +43,26 @@ addManager = function(answer) {
     })
 };
 getEmployees = function() {
-    connection.query("SELECT * FROM employee", function(err, result) {
+    connection.query("SELECT employee.id, employee.first_name, employee.last_name, role.title, department.department, role.salary, manager.manager FROM (((employee left join role on employee.role_id=role.id) left join department on role.department_id = department.id) left join manager on employee.manager_id=manager.id) order by employee.id", function(err, result) {
         if (err) throw err;
+        console.table(result);
         return result;
     })
 };
 getEmployeesByDepartment = function(answer) {
-    connection.query("SELECT * FROM employee WHERE department_id = (?)", [answer.id], function(err, result) {
+    connection.query("SELECT employee.id, employee.first_name, employee.last_name, role.title, department.department, role.salary, manager.manager FROM (((employee left join role on employee.role_id=role.id) left join department on role.department_id = department.id) left join manager on employee.manager_id=manager.id) where department.department = ? order by employee.id", [answer.name], function(err, result) {
         if (err) throw err;
         console.table(result);
     })
 };
 getEmployeesByManager = function(answer) {
-    connection.query("SELECT * FROM employee WHERE manager_id = (?)", [answer.id], function(err, result) {
+    connection.query("SELECT manager.id FROM manager WHERE manager.manager = ?", [answer.name], function(err, result) {
         if (err) throw err;
-        console.table(result);
-    })
+        connection.query("SELECT employee.id, employee.first_name, employee.last_name, role.title, department.department, role.salary, manager.manager FROM (((employee left join role on employee.role_id=role.id) left join department on role.department_id = department.id) left join manager on employee.manager_id=manager.id) where employee.manager_id = ?", [result[0].id], function(err, result) {
+            if (err) throw err;
+            console.table(result);
+        })
+        })
 };
 updateEmployeeManager = function(answer) {
     connection.query("UPDATE employee SET manager_id = ? WHERE id=(?)", [answer.manager, answer.id], function(err, result) {
@@ -96,6 +104,46 @@ getDepartments = function() {
     connection.query("SELECT * FROM department", function(err, result){
         if (err) throw err;
         return result;
+    })
+}
+renderEmployees = function() {
+    employeeArray = [];
+    query = "select * from employee";
+    connection.query(query,function(err, res){
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++){
+            employeeArray.push(`${res[i].first_name} ${res[i].last_name}`);
+        }
+    })
+}
+renderRoles = function() {
+    roleArray = [];
+    query = "select * from role";
+    connection.query(query,function(err, res){
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++){
+            roleArray.push(res[i].title);
+        }
+    })
+}
+renderDepartments = function() {
+    departmentArray = [];
+    query = "select * from department";
+    connection.query(query,function(err, res){
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++){
+            departmentArray.push(res[i].department);
+        }
+    })
+}
+renderManagers = function() {
+    managerArray = [];
+    query = "select * from manager";
+    connection.query(query,function(err, res){
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++){
+            managerArray.push(res[i].manager);
+        }
     })
 }
 //view all employees, employees by manager, employees by department
@@ -171,7 +219,7 @@ async function getByDepartmentQuery() {
             type: "list",
             name: "name",
             message: "Which department would you like to view?",
-            choices: getDepartments()
+            choices: departmentArray
         }
     );
 }
@@ -181,7 +229,7 @@ async function getByManagerQuery() {
             type: "list",
             name: "name",
             message: "Which manager's employees would you like to view?",
-            choices: getManagers()
+            choices: managerArray
         }
     );
 }
@@ -239,16 +287,22 @@ async function removeRoleQuery() {
 }
 //const menu = [0, "View employees by department", "View employees by manager", "Add employee", "Remove Employee", "Update employee role", "Update employee manager", "Add Manager", "Add role", "Remove role"]
 async function init() {
+    renderEmployees();
+    renderRoles();
+    renderDepartments();
+    renderManagers();
     let first = await mainPrompt();
     if (first.choice === menu[0]){
-        await console.table(getEmployees());
+        getEmployees();
     }
     else if (first.choice === menu[1]){
-        let answer = getByDepartmentQuery();
-        console.log(answer.name);
+        answer = await getByDepartmentQuery();
+        getEmployeesByDepartment(answer);
+        
     }
     else if (first.choice === menu[2]){
-        
+        answer = await getByManagerQuery();
+        getEmployeesByManager(answer);
     }
     else if (first.choice === menu[3]){
         
@@ -271,6 +325,6 @@ async function init() {
     else if (first.choice === menu[9]){
         
     }
-    init();
+    setTimeout(function(){ init(); }, 500);;
 }
 init();
