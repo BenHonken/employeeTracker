@@ -12,7 +12,7 @@ const connection = mysql.createConnection({
     password: "Rootpassword",
     database: "employees"
 });
-const menu = ["View all employees", "View employees by department", "View employees by manager", "Add employee", "Remove Employee", "Update employee role", "Update employee manager", "Add Manager", "Add role", "Remove role"]
+const menu = ["View all employees", "View employees by department", "View employees by manager", "Add employee", "Remove Employee", "Update employee role", "Update employee manager", "Add Manager", "View roles", "Add role", "Remove role", "View Departments", "Add Department", "Remove Department"]
 connection.connect(function(err) {
     if (err) {
         console.error("error connecting: " + err.stack);
@@ -285,6 +285,25 @@ async function removeRoleQuery() {
         }
     );
 }
+async function backToMain() {
+    const backToMainPrompt = function(){
+        return inquirer.prompt(
+            {
+                type: "list",
+                name: "response",
+                message: "Would you like to return to the main menu?",
+                choices: ["Yes", "No"]
+            }
+        );
+    }
+    let backToMainResponse = await backToMainPrompt();
+    if(backToMainResponse.response === "Yes"){
+        init();
+    }
+    else{
+        console.log("All changes have been saved.  Goodbye!");
+    }
+}
 //const menu = [0, "View employees by department", "View employees by manager", "Add employee", "Remove Employee", "Update employee role", "Update employee manager", "Add Manager", "Add role", "Remove role"]
 async function init() {
     renderEmployees();
@@ -325,6 +344,18 @@ async function init() {
     else if (first.choice === menu[9]){
         
     }
-    setTimeout(function(){ init(); }, 500);;
+    else if (first.choice === menu[10]){
+        
+    }
+    else if (first.choice === menu[11]){
+        
+    }
+    else if (first.choice === menu[12]){
+        
+    }
+    else if (first.choice === menu[13]){
+        
+    }
+    setTimeout(function(){ backToMain(); }, 500);;
 }
 init();
