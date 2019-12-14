@@ -5,6 +5,10 @@ let employeeArray = [];
 let roleArray = [];
 let departmentArray = [];
 let managerArray = [];
+let employeeIdArray = [];
+let roleIdArray = [];
+let departmentIdArray = [];
+let managerIdArray = [];
 const connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
@@ -12,7 +16,7 @@ const connection = mysql.createConnection({
     password: "Rootpassword",
     database: "employees"
 });
-const menu = ["View all employees", "View employees by department", "View employees by manager", "Add employee", "Remove Employee", "Update employee role", "Update employee manager", "Add Manager", "View roles", "Add role", "Remove role", "View Departments", "Add Department", "Remove Department"]
+const menu = ["View all employees", "View employees by department", "View employees by manager", "Add employee", "Remove employee", "Update employee role", "Update employee manager", "Add manager", "View roles", "Add role", "Remove role", "View departments", "Add department", "Remove department"]
 connection.connect(function(err) {
     if (err) {
         console.error("error connecting: " + err.stack);
@@ -32,9 +36,18 @@ addRole = function(answer) {
     })
 };
 addEmployee = function(answer) {
-    connection.query("INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?)", [answer.data], function(err, result) {
+    let managerId;
+    if(answer.manager != 'null') {
+        managerId = managerIdArray[managerArray.indexOf(answer.manager)];
+    }
+    else{
+        managerId=null;
+    }
+    let roleId = roleIdArray[roleArray.indexOf(answer.role)];
+    connection.query("INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)", [answer.first_name, answer.last_name, roleId, managerId], function(err, result) {
         if (err) throw err;
     })
+    console.log(answer.first_name + " " + answer.last_name + " the " + answer.role + " was added to the database!");
 };
 addManager = function(answer) {
     connection.query("INSERT INTO manager (employee_id) VALUES (?)", [answer.id], function(err, result) {
@@ -108,41 +121,48 @@ getDepartments = function() {
 }
 renderEmployees = function() {
     employeeArray = [];
+    employeeIdArray = [];
     query = "select * from employee";
     connection.query(query,function(err, res){
         if (err) throw err;
         for (var i = 0; i < res.length; i++){
             employeeArray.push(`${res[i].first_name} ${res[i].last_name}`);
+            employeeIdArray.push(res[i].id);
         }
     })
 }
 renderRoles = function() {
     roleArray = [];
+    roleIdArray = [];
     query = "select * from role";
     connection.query(query,function(err, res){
         if (err) throw err;
         for (var i = 0; i < res.length; i++){
             roleArray.push(res[i].title);
+            roleIdArray.push(res[i].id);
         }
     })
 }
 renderDepartments = function() {
     departmentArray = [];
+    departmentIdArray = [];
     query = "select * from department";
     connection.query(query,function(err, res){
         if (err) throw err;
         for (var i = 0; i < res.length; i++){
             departmentArray.push(res[i].department);
+            departmentIdArray.push(res[i].id);
         }
     })
 }
 renderManagers = function() {
-    managerArray = [];
+    managerArray = ['null'];
     query = "select * from manager";
     connection.query(query,function(err, res){
         if (err) throw err;
         for (var i = 0; i < res.length; i++){
             managerArray.push(res[i].manager);
+            managerIdArray.push(res[i].id);
         }
     })
 }
@@ -189,7 +209,7 @@ async function addManagerQuery() {
 }
 async function addEmployeeQuery() {
     return inquirer.prompt(
-        {
+        [{
             type: "input",
             name: "first_name",
             message: "What is the first name of the employee?"
@@ -201,16 +221,16 @@ async function addEmployeeQuery() {
         },
         {
             type: "list",
-            name: "role_id",
+            name: "role",
             message: "What is the role of the employee?",
-            choices: getRoles()
+            choices: roleArray
         },
         {
             type: "list",
-            name: "manager_id",
-            message: "What is the role of the employee?",
-            choices: getManagers()
-        },
+            name: "manager",
+            message: "Who is the manager of the employee?",
+            choices: managerArray
+        }]
     );
 }
 async function getByDepartmentQuery() {
@@ -304,7 +324,6 @@ async function backToMain() {
         console.log("All changes have been saved.  Goodbye!");
     }
 }
-//const menu = [0, "View employees by department", "View employees by manager", "Add employee", "Remove Employee", "Update employee role", "Update employee manager", "Add Manager", "Add role", "Remove role"]
 async function init() {
     renderEmployees();
     renderRoles();
@@ -324,7 +343,8 @@ async function init() {
         getEmployeesByManager(answer);
     }
     else if (first.choice === menu[3]){
-        
+        answer = await addEmployeeQuery();
+        addEmployee(answer);
     }
     else if (first.choice === menu[4]){
         
