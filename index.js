@@ -90,9 +90,12 @@ updateEmployeeRole = function(answer) {
     })
 };
 removeEmployee = function(answer) {
-    connection.query("REMOVE FROM employee WHERE id= (?)", [answer.id], function(err, result) {
+    let employeeId = employeeIdArray[employeeArray.indexOf(answer.name)];
+    connection.query("DELETE FROM employee WHERE id= ?", [employeeId], function(err, result) {
         if (err) throw err;
-    
+        else{
+            console.log(answer.name + " has been removed from the database!")
+        }
     })
 };
 removeRole = function(answer) {
@@ -291,7 +294,7 @@ async function removeEmployeeQuery() {
             type: "list",
             name: "name",
             message: "Which employee would you like to remove?",
-            choices: getEmployees()
+            choices: employeeArray
         }
     );
 }
@@ -347,7 +350,8 @@ async function init() {
         addEmployee(answer);
     }
     else if (first.choice === menu[4]){
-        
+        answer = await removeEmployeeQuery();
+        removeEmployee(answer);
     }
     else if (first.choice === menu[5]){
         
