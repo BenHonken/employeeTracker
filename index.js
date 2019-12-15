@@ -31,9 +31,11 @@ addDepartment = function(answer) {
     })
 };
 addRole = function(answer) {
-    connection.query("INSERT INTO role (title, salary, department_id) VALUES (?)", [answer.data], function(err, result) {
+    let departmentId = departmentIdArray[departmentArray.indexOf(answer.department)];
+    connection.query("INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)", [answer.name, answer.salary, departmentId], function(err, result) {
         if (err) throw err;
     })
+    console.log(answer.name + " was added to roles.");
 };
 addEmployee = function(answer) {
     let managerId;
@@ -112,10 +114,12 @@ removeEmployee = function(answer) {
     })
 };
 removeRole = function(answer) {
-    connection.query("DELETE FROM role WHERE id= (?)", [answer.id], function(err, result) {
+    let roleId = roleIdArray[roleArray.indexOf(answer.name)];
+    connection.query("DELETE FROM role WHERE id = ?", [roleId], function(err, result) {
         if (err) throw err;
     
     })
+    console.log(answer.name + " was removed from roles.");
 };
 removeManager = function(answer) {
     let managerId = managerIdArray[managerArray.indexOf(answer.name)];
@@ -128,6 +132,7 @@ removeManager = function(answer) {
 getRoles = function() {
     connection.query("SELECT * FROM role", function(err, result) {
         if (err) throw err;
+        console.table(result);
         return result;
     })
 };
@@ -214,11 +219,22 @@ async function addDepartmentQuery() {
 }
 async function addRoleQuery() {
     return inquirer.prompt(
-        {
+        [{
             type: "input",
             name: "name",
-            message: "What is the name of the role?"
-        }
+            message: "What is the title of the role?"
+        },
+        {
+            type: "number",
+            name: "salary",
+            message: "What is the salary of the role?"
+        },
+        {
+            type: "list",
+            name: "department",
+            message: "What department does the role belong to?",
+            choices: departmentArray
+        }]
     );
 }
 async function addManagerQuery() {
@@ -337,7 +353,7 @@ async function removeRoleQuery() {
             type: "list",
             name: "name",
             message: "Which role would you like to remove?",
-            choices: getManagers()
+            choices: roleArray
         }
     );
 }
@@ -403,13 +419,15 @@ async function init() {
         removeManager(answer);
     }
     else if (first.choice === menu[9]){
-        
+        getRoles();
     }
     else if (first.choice === menu[10]){
-        
+        answer = await addRoleQuery();
+        addRole(answer);
     }
     else if (first.choice === menu[11]){
-        
+        answer = await removeRoleQuery();
+        removeRole(answer);
     }
     else if (first.choice === menu[12]){
         
