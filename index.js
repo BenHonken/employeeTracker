@@ -26,8 +26,9 @@ connection.connect(function(err) {
 });
 
 addDepartment = function(answer) {
-    connection.query("INSERT INTO department (name) VALUES (?)", [answer.name], function(err, result) {
+    connection.query("INSERT INTO department (department) VALUES (?)", [answer.name], function(err, result) {
         if (err) throw err;
+        console.log(answer.name + " was added to departments.")
     })
 };
 addRole = function(answer) {
@@ -121,6 +122,14 @@ removeRole = function(answer) {
     })
     console.log(answer.name + " was removed from roles.");
 };
+removeDepartment = function(answer) {
+    let departmentId = departmentIdArray[departmentArray.indexOf(answer.name)];
+    connection.query("DELETE FROM department WHERE id = ?", [departmentId], function(err, result) {
+        if (err) throw err;
+    
+    })
+    console.log(answer.name + " was removed from departments.");
+}
 removeManager = function(answer) {
     let managerId = managerIdArray[managerArray.indexOf(answer.name)];
     connection.query("DELETE FROM manager WHERE id = ?", [managerId], function(err, result) {
@@ -145,6 +154,7 @@ getManagers = function() {
 getDepartments = function() {
     connection.query("SELECT * FROM department", function(err, result){
         if (err) throw err;
+        console.table(result);
         return result;
     })
 }
@@ -357,6 +367,16 @@ async function removeRoleQuery() {
         }
     );
 }
+async function removeDepartmentQuery() {
+    return inquirer.prompt(
+        {
+            type: "list",
+            name: "name",
+            message: "Which department would you like to remove?",
+            choices: departmentArray
+        }
+    );
+}
 async function backToMain() {
     const backToMainPrompt = function(){
         return inquirer.prompt(
@@ -430,10 +450,15 @@ async function init() {
         removeRole(answer);
     }
     else if (first.choice === menu[12]){
-        
+        getDepartments();
     }
     else if (first.choice === menu[13]){
-        
+        answer = await addDepartmentQuery();
+        addDepartment(answer);
+    }
+    else if (first.choice === menu[14]){
+        answer = await removeDepartmentQuery();
+        removeDepartment(answer);
     }
     setTimeout(function(){ backToMain(); }, 500);;
 }
