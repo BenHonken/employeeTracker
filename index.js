@@ -16,7 +16,7 @@ const connection = mysql.createConnection({
     password: "Rootpassword",
     database: "employees"
 });
-const menu = ["View all employees", "View employees by department", "View employees by manager", "Add employee", "Remove employee", "Update employee role", "Update employee manager", "Add manager", "View roles", "Add role", "Remove role", "View departments", "Add department", "Remove department"]
+const menu = ["View all employees", "View employees by department", "View employees by manager", "Add employee", "Remove employee", "Update employee role", "Update employee manager", "Add manager", "Remove manager", "View roles", "Add role", "Remove role", "View departments", "Add department", "Remove department"]
 connection.connect(function(err) {
     if (err) {
         console.error("error connecting: " + err.stack);
@@ -50,10 +50,12 @@ addEmployee = function(answer) {
     console.log(answer.first_name + " " + answer.last_name + " the " + answer.role + " was added to the database!");
 };
 addManager = function(answer) {
-    connection.query("INSERT INTO manager (employee_id) VALUES (?)", [answer.id], function(err, result) {
+    let employeeId = employeeIdArray[employeeArray.indexOf(answer.name)];
+    connection.query("INSERT INTO manager (employee_id, manager) VALUES (?, ?)", [employeeId, answer.name], function(err, result) {
         if (err) throw err;
     
     })
+    console.log(answer.name + " is now a manager!")
 };
 getEmployees = function() {
     connection.query("SELECT employee.id, employee.first_name, employee.last_name, role.title, department.department, role.salary, manager.manager FROM (((employee left join role on employee.role_id=role.id) left join department on role.department_id = department.id) left join manager on employee.manager_id=manager.id) order by employee.id", function(err, result) {
@@ -78,15 +80,26 @@ getEmployeesByManager = function(answer) {
         })
 };
 updateEmployeeManager = function(answer) {
-    connection.query("UPDATE employee SET manager_id = ? WHERE id=(?)", [answer.manager, answer.id], function(err, result) {
+    let employeeId = employeeIdArray[employeeArray.indexOf(answer.name)];
+    let managerId = managerIdArray[managerArray.indexOf(answer.manager)-1];
+    if (answer.manager == 'null'){
+        managerId = null;
+    }
+    connection.query("UPDATE employee SET manager_id = ? WHERE id= ?", [managerId, employeeId], function(err, result) {
         if (err) throw err;
-    
+        else{
+            console.log(answer.name + "'s role was updated!")
+        }
     })
 };
 updateEmployeeRole = function(answer) {
-    connection.query("UPDATE employee SET role_id = ? WHERE id=(?)", [answer.role, answer.id], function(err, result) {
+    let employeeId = employeeIdArray[employeeArray.indexOf(answer.name)];
+    let roleId = roleIdArray[roleArray.indexOf(answer.role)];
+    connection.query("UPDATE employee SET role_id = ? WHERE id= ?", [roleId, employeeId], function(err, result) {
         if (err) throw err;
-    
+        else{
+            console.log(answer.name + "'s role was updated!")
+        }
     })
 };
 removeEmployee = function(answer) {
@@ -99,10 +112,18 @@ removeEmployee = function(answer) {
     })
 };
 removeRole = function(answer) {
-    connection.query("REMOVE FROM role WHERE id= (?)", [answer.id], function(err, result) {
+    connection.query("DELETE FROM role WHERE id= (?)", [answer.id], function(err, result) {
         if (err) throw err;
     
     })
+};
+removeManager = function(answer) {
+    let managerId = managerIdArray[managerArray.indexOf(answer.name)];
+    connection.query("DELETE FROM manager WHERE id = ?", [managerId], function(err, result) {
+        if (err) throw err;
+    
+    })
+    console.log(answer.name + " is no longer a manager.")
 };
 getRoles = function() {
     connection.query("SELECT * FROM role", function(err, result) {
@@ -206,7 +227,18 @@ async function addManagerQuery() {
             type: "list",
             name: "name",
             message: "Which employee would you like to make a manager?",
-            choices: getEmployees()
+            choices: employeeArray
+        }
+    );
+}
+async function removeManagerQuery() {
+    managerArray.shift();
+    return inquirer.prompt(
+        {
+            type: "list",
+            name: "name",
+            message: "Which manager would you like to remove?",
+            choices: managerArray
         }
     );
 }
@@ -247,6 +279,7 @@ async function getByDepartmentQuery() {
     );
 }
 async function getByManagerQuery() {
+    managerArray.shift();
     return inquirer.prompt(
         {
             type: "list",
@@ -258,34 +291,34 @@ async function getByManagerQuery() {
 }
 async function updateManagerQuery() {
     return inquirer.prompt(
-        {
+        [{
             type: "list",
-            name: "id",
+            name: "name",
             message: "Which employee would you like to update?",
-            choices: getEmployees()
+            choices: employeeArray
         },
         {
             type: "list",
             name: "manager",
             message: "Which manager would you like to assign?",
-            choices: getManagers()
-        }
+            choices: managerArray
+        }]
     );
 }
 async function updateRoleQuery() {
     return inquirer.prompt(
-        {
+        [{
             type: "list",
-            name: "id",
+            name: "name",
             message: "Which employee would you like to update?",
-            choices: getEmployees()
+            choices: employeeArray
         },
         {
             type: "list",
             name: "role",
             message: "Which role would you like to assign?",
-            choices: getRoles()
-        }
+            choices: roleArray
+        }]
     );
 }
 async function removeEmployeeQuery() {
@@ -354,16 +387,20 @@ async function init() {
         removeEmployee(answer);
     }
     else if (first.choice === menu[5]){
-        
+        answer = await updateRoleQuery();
+        updateEmployeeRole(answer);
     }
     else if (first.choice === menu[6]){
-        
+        answer = await updateManagerQuery();
+        updateEmployeeManager(answer);
     }
     else if (first.choice === menu[7]){
-        
+        answer = await addManagerQuery();
+        addManager(answer);
     }
     else if (first.choice === menu[8]){
-        
+        answer = await removeManagerQuery();
+        removeManager(answer);
     }
     else if (first.choice === menu[9]){
         
