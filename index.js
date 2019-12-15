@@ -41,7 +41,7 @@ addRole = function(answer) {
 addEmployee = function(answer) {
     let managerId;
     if(answer.manager != 'null') {
-        managerId = managerIdArray[managerArray.indexOf(answer.manager)];
+        managerId = managerIdArray[managerArray.indexOf(answer.manager)-1];
     }
     else{
         managerId=null;
